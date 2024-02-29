@@ -39,10 +39,10 @@ strict: clean depend all
 # resulting program when running 'make'
 
 depend .depend:
-		$(FMAKEDEPEND) -o converter_AZ.x $(DIR)/*.f* $(DIR)/*.F* > .depend
+		$(FMAKEDEPEND) -o bin2NC.x $(DIR)/*.f* $(DIR)/*.F* > .depend
 
 library:
-		ar -cvr libconverter_AZ.a $(FOBJ) *.mod
+		ar -cvr libbin2NC.a $(FOBJ) *.mod
 
 # The compilation line of makedepf90 is by default:
 #   3 emic.x: $(FOBJ)

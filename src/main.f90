@@ -66,7 +66,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"tem",.true.)
+         call main_work(FileList(i)%record,trim(outputfile),"tas",.true.,stdnm="surface_temperature")
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if

@@ -12,7 +12,7 @@
 
       real(kind=dblp), dimension(:), allocatable :: coord_lat, coord_lon
 
-      character(len=strlen) :: ref_latlon_file = "test-data/6k_dominant_caraib.nc"
+      character(len=strlen) :: ref_latlon_file = "../fxd_data/EUROPEAN_GRID_Zapolska.nc"
 
      contains
 
@@ -28,7 +28,7 @@
      end subroutine
 
 
-     subroutine main_work(filenmin, filenmout, varnm, txt_to_nc)
+     subroutine main_work(filenmin, filenmout, varnm, txt_to_nc,stdnm)
 
 
       use global_constants_mod, only : dblp=>dp, ip, silp=>sp
@@ -38,6 +38,7 @@
 
       logical, intent(in)          :: txt_to_nc
       character(len=*), intent(in) :: filenmin, filenmout, varnm
+      character(len=*), optional, intent(in) :: stdnm
 
       integer(kind=ip) :: unitinputfile, io_stat=0, nb_days=365, i,unitoutputfile, lat, lon
       integer(kind=ip), dimension(1) :: lo, la
@@ -83,7 +84,7 @@
 
       close(unitinputfile)
 
-      ca_marche = write_nc_file_2DTime(filenmout,varnm,var_to_write_nc,coord_lon,coord_lat,nb_days)
+      ca_marche = write_nc_file_2DTime(filenmout,varnm,var_to_write_nc,coord_lon,coord_lat,nb_days,stdnm=stdnm)
 
       deallocate(x_input_var)
       deallocate(var_to_write_nc)
@@ -139,15 +140,16 @@
 
      end function read_input_geom
 
-     function write_nc_file_2DTime(filenm_to_write,name_var_to_write, var_to_write,axis_x, axis_y,nb_time) result (success)
+     function write_nc_file_2DTime(filenm_to_write,name_var_to_write, var_to_write,axis_x, axis_y,nb_time, stdnm) result (success)
 
-        use ncio, only: nc_create, nc_write_dim, nc_write
+        use ncio, only: nc_create, nc_write_dim, nc_write, nc_write_attr, nc_write_map
         use global_constants_mod, only : dblp=>dp, ip, silp=>sp
 
 
         real(kind=dblp), dimension(:,:,:), intent(in) :: var_to_write
         real(kind=dblp), dimension(:),     intent(in) :: axis_x, axis_y
         character(len=*),                intent(in) :: filenm_to_write, name_var_to_write
+        character(len=*), optional,      intent(in) :: stdnm
         integer(kind=ip),                intent(in) :: nb_time
 
 
@@ -156,24 +158,54 @@
         integer(kind=ip)                            :: i
 
         CALL nc_create(filenm_to_write,overwrite=.true.,netcdf4=.true., author="roche")
+               
         ! CALL nc_write_attr(this%filename,"Title",TRIM(this%title_file))
-        ! CALL nc_write_attr(this%filename,"Institution", TRIM(this%institution_name))
+        CALL nc_write_attr(filenm_to_write,         &
+                          "Institution", "Laboratoire des Sciences du Climat et de l'Environnement ; Vrije Universiteit Amsterdam")
+        CALL nc_write_attr(filenm_to_write, "Conventions", "CF-1.8")
 
              ! Time AXIS
-        CALL nc_write_dim(filenm_to_write,"time",x=1.0, units="days",calendar="365d"   &
-                          , unlimited=.TRUE.)
+        CALL nc_write_dim(filenm_to_write,"time",x=1.0, units="days since 1-1-1 0:0:0",calendar="365_day" &
+                         ,long_name="time @ 3 ka BP", standard_name="time", unlimited=.TRUE.)
              ! Spatial AXES
-        CALL nc_write_dim(filenm_to_write,"latitude" ,x=axis_y,units="degrees_north")
-        CALL nc_write_dim(filenm_to_write,"longitude",x=axis_x,units="degrees_east")
+        CALL nc_write_dim(filenm_to_write,"lat" ,x=axis_y,units="degrees_north", long_name="latitude", standard_name="latitude")
+        CALL nc_write_dim(filenm_to_write,"lon",x=axis_x,units="degrees_east", long_name="longitude", standard_name="longitude")
 
-        do i = 1, nb_time
-          call nc_write(filenm_to_write,"time",i,dim1="time",start=[i],count=[1])
-          call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,i)                                        &
-                          , dim1="longitude",dim2="latitude",dim3="time"                                             &
-                          ,start=[1,1,i],count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),1],      &
-                            missing_value=undef_dblp)
-        enddo
-
+!        if (present(stdnm)) then
+          do i = 1, nb_time
+            call nc_write(filenm_to_write,"time",i,dim1="time",start=[i],count=[1])
+            call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,i)                                        &
+                            , dim1="lon",dim2="lat",dim3="time"                                                        &
+                            ,start=[1,1,i],count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),1],            &
+                             standard_name=stdnm, missing_value=undef_dblp)
+          enddo
+!        else
+!          do i = 1, nb_time
+!            call nc_write(filenm_to_write,"time",i,dim1="time",start=[i],count=[1])
+!            call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,i)                                        &
+!                            , dim1="lon",dim2="lat",dim3="time"                                                        &
+!                            ,start=[1,1,i],count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),1],            &
+!                              missing_value=undef_dblp)
+!          enddo          
+!        endif
+        
+        CALL nc_write_attr(filenm_to_write, varname="time", name="axis", value="T")
+        
+        call nc_write_map(filenm_to_write,"latitude_longitude")
+        CALL nc_write_attr(filenm_to_write, varname="crs", name="semi_major_axis", value=6371000.0)
+        CALL nc_write_attr(filenm_to_write, varname="crs", name="inverse_flattening", value=0)
+ 
+        if ( present(stdnm) ) then
+        
+          select case(trim(stdnm))
+          case("surface_temperature" )
+              CALL nc_write_attr(filenm_to_write, varname=name_var_to_write, name="units", value="degC")
+          case DEFAULT
+              ! do nothing
+          end select
+               
+        endif
+        
      end function write_nc_file_2DTime
 
      end module converter_AZ
