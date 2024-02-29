@@ -171,23 +171,11 @@
         CALL nc_write_dim(filenm_to_write,"lat" ,x=axis_y,units="degrees_north", long_name="latitude", standard_name="latitude")
         CALL nc_write_dim(filenm_to_write,"lon",x=axis_x,units="degrees_east", long_name="longitude", standard_name="longitude")
 
-!        if (present(stdnm)) then
-          do i = 1, nb_time
-            call nc_write(filenm_to_write,"time",i,dim1="time",start=[i],count=[1])
-            call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,i)                                        &
-                            , dim1="lon",dim2="lat",dim3="time"                                                        &
-                            ,start=[1,1,i],count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),1],            &
-                             standard_name=stdnm, missing_value=undef_dblp)
-          enddo
-!        else
-!          do i = 1, nb_time
-!            call nc_write(filenm_to_write,"time",i,dim1="time",start=[i],count=[1])
-!            call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,i)                                        &
-!                            , dim1="lon",dim2="lat",dim3="time"                                                        &
-!                            ,start=[1,1,i],count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),1],            &
-!                              missing_value=undef_dblp)
-!          enddo          
-!        endif
+        call nc_write(filenm_to_write,"time",(/ (i, i = 1, nb_time) /),dim1="time",start=[1],count=[nb_time])
+        call nc_write(filenm_to_write,name_var_to_write,var_to_write(:,:,:)                                            &
+                                          , dim1="lon",dim2="lat",dim3="time",start=[1,1,1]                            &
+                                          ,count=[UBOUND(var_to_write,dim=1),UBOUND(var_to_write,dim=2),nb_time]       &
+                                          ,standard_name=stdnm, missing_value=undef_dblp)
         
         CALL nc_write_attr(filenm_to_write, varname="time", name="axis", value="T")
         
