@@ -1,21 +1,43 @@
      module converter_AZ
 
+      use global_constants_mod, only : dblp=>dp, strlen => str_len
+
       implicit none
 
       private
 
       public:: main_work
 
+      logical :: initialized = .false.
+
+      real(kind=dblp), dimension(:), allocatable :: coord_lat, coord_lon
+
+      character(len=strlen) :: ref_latlon_file = "test-data/6k_dominant_caraib.nc"
 
      contains
 
-     subroutine main_work()
+     subroutine init_coords()
+
+      use ncio, only: nc_read
+
+       coord_lat = read_input_geom(ref_latlon_file,"lat")
+       coord_lon = read_input_geom(ref_latlon_file,"lon")
+
+       initialized = .true.
+
+     end subroutine
+
+
+     subroutine main_work(filenmin, filenmout, varnm, txt_to_nc)
 
 
       use global_constants_mod, only : dblp=>dp, ip, silp=>sp
       use ncio, only: nc_read
 
       implicit none
+
+      logical, intent(in)          :: txt_to_nc
+      character(len=*), intent(in) :: filenmin, filenmout, varnm
 
       integer(kind=ip) :: unitinputfile, io_stat=0, nb_days=365, i,unitoutputfile, lat, lon
       integer(kind=ip), dimension(1) :: lo, la
@@ -26,26 +48,26 @@
       real(KIND=dblp),  PARAMETER :: undef_dblp = (-1.0_dblp)*HUGE(1.0_silp)
 
       real(kind=dblp)                            :: lat_itude, long_itude, no_data=undef_dblp, lon360
-      real(kind=dblp), dimension(:), allocatable :: coord_lat, coord_lon
+
       real(kind=dblp), dimension(:,:,:), allocatable :: var_to_write_nc, var_to_check_nc
 
       logical :: ca_marche
 
       integer :: nb_points = 0
 
-      coord_lat = read_input_geom("test-data/6k_dominant_caraib.nc","lat")
-      coord_lon = read_input_geom("test-data/6k_dominant_caraib.nc","lon")
 
-      open(newunit=unitinputfile,file='test-data/temsg2.dat', form='formatted')
+      if (.not. initialized) then
+        call init_coords()
+      endif
 
+      if ( txt_to_nc ) then
+
+      open(newunit=unitinputfile,file=filenmin, form='formatted')
 
       allocate(x_input_var(nb_days))
       allocate(var_to_write_nc(size(coord_lon),size(coord_lat),nb_days))
-      allocate(var_to_check_nc(size(coord_lon),size(coord_lat),nb_days))
 
       var_to_write_nc(:,:,:) = no_data
-      var_to_check_nc(:,:,:) = no_data
-
 
       do while(io_stat .eq. 0)
         read(unitinputfile,*,iostat=io_stat) long_itude, lat_itude, (x_input_var(i),i=1,nb_days)
@@ -61,33 +83,40 @@
 
       close(unitinputfile)
 
-      ca_marche = write_nc_file_2DTime("temsg2.nc","temsg",var_to_write_nc,coord_lon,coord_lat,nb_days)
-
-
-      call nc_read("temsg2.nc","temsg",var_to_check_nc)
-
-      write(*,*) "check", maxval(var_to_check_nc-var_to_write_nc), minval(var_to_check_nc-var_to_write_nc), nb_points &
-                        , ubound(var_to_check_nc,dim=1),ubound(var_to_check_nc,dim=2)
-
-
-      open(newunit=unitoutputfile, file='temsg2-chck.dat', form='formatted')
-
-
-      do lon=1,ubound(var_to_check_nc,dim=1)
-        do lat=1,ubound(var_to_check_nc,dim=2)
-          if (coord_lon(lon).lt.0.0_dblp) lon360 = coord_lon(lon) + 360.0_dblp
-          if (var_to_check_nc(lon,lat,1).GT.undef_dblp) then
-            write(unitoutputfile, '(*(F10.4))') lon360, coord_lat(lat), (var_to_check_nc(lon,lat,i),i=1,nb_days)
-          endif
-        enddo
-      enddo
-
-      close(unitoutputfile)
+      ca_marche = write_nc_file_2DTime(filenmout,varnm,var_to_write_nc,coord_lon,coord_lat,nb_days)
 
       deallocate(x_input_var)
       deallocate(var_to_write_nc)
-      deallocate(var_to_check_nc)
 
+      io_stat=0
+      
+      else
+
+        allocate(var_to_check_nc(size(coord_lon),size(coord_lat),nb_days))
+        var_to_check_nc(:,:,:) = no_data
+        call nc_read(filenmin,varnm,var_to_check_nc)
+
+        ! write(*,*) "check", maxval(var_to_check_nc-var_to_write_nc)                   &
+        !                , minval(var_to_check_nc-var_to_write_nc), nb_points           &
+        !                , ubound(var_to_check_nc,dim=1),ubound(var_to_check_nc,dim=2)
+
+
+        open(newunit=unitoutputfile, file=filenmout, form='formatted')
+
+
+        do lon=1,ubound(var_to_check_nc,dim=1)
+          do lat=1,ubound(var_to_check_nc,dim=2)
+            if (coord_lon(lon).lt.0.0_dblp) lon360 = coord_lon(lon) + 360.0_dblp
+            if (var_to_check_nc(lon,lat,1).GT.undef_dblp) then
+              write(unitoutputfile, '(*(F10.4))') lon360, coord_lat(lat), (var_to_check_nc(lon,lat,i),i=1,nb_days)
+            endif
+          enddo
+        enddo
+
+        close(unitoutputfile)
+        deallocate(var_to_check_nc)
+
+       endif
 
      end subroutine main_work
 
