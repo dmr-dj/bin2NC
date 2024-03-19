@@ -30,7 +30,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"tem",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"shr",.true.)
+         call main_work(FileList(i)%record,trim(outputfile),"rcc",.true.,stdnm="relative_cloud_cover")
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if
@@ -48,7 +48,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"wnd",.true.)
+         call main_work(FileList(i)%record,trim(outputfile),"wnd",.true.,stdnm="wind_speed")
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if
@@ -85,7 +85,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
+         call main_work(FileList(i)%record,trim(outputfile),"pr",.true.,stdnm="precipitation_flux")
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if
@@ -103,7 +103,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"rhu",.true.)
+         call main_work(FileList(i)%record,trim(outputfile),"hur",.true.,stdnm="relative_humidity")
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if
