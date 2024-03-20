@@ -28,7 +28,7 @@
      end subroutine
 
 
-     subroutine main_work(filenmin, filenmout, varnm, txt_to_nc,stdnm)
+     subroutine main_work(filenmin, filenmout, varnm,txt_to_nc,stdnm,multiple)
 
 
       use global_constants_mod, only : dblp=>dp, ip, silp=>sp
@@ -39,6 +39,7 @@
       logical, intent(in)          :: txt_to_nc
       character(len=*), intent(in) :: filenmin, filenmout, varnm
       character(len=*), optional, intent(in) :: stdnm
+      real(kind=dblp), optional, intent(in) :: multiple
 
       integer(kind=ip) :: unitinputfile, io_stat=0, nb_days=365, i,unitoutputfile, lat, lon
       integer(kind=ip), dimension(1) :: lo, la
@@ -49,6 +50,7 @@
       real(KIND=dblp),  PARAMETER :: undef_dblp = (-1.0_dblp)*HUGE(1.0_silp)
 
       real(kind=dblp)                            :: lat_itude, long_itude, no_data=undef_dblp, lon360
+      real(kind=dblp)                            :: multple
 
       real(kind=dblp), dimension(:,:,:), allocatable :: var_to_write_nc, var_to_check_nc
 
@@ -59,6 +61,12 @@
 
       if (.not. initialized) then
         call init_coords()
+      endif
+
+      if (PRESENT(multiple)) then
+        multple = multiple
+      else
+        multple = 1.0_dblp
       endif
 
       if ( txt_to_nc ) then
@@ -78,7 +86,7 @@
         lo(:) = minloc(abs(long_itude-coord_lon))
         la(:) = minloc(abs(lat_itude-coord_lat))
 
-        var_to_write_nc(lo(1),la(1),:) = x_input_var(:)
+        var_to_write_nc(lo(1),la(1),:) = x_input_var(:)*multple
         nb_points = nb_points + 1
       enddo
 

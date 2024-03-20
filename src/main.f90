@@ -3,6 +3,7 @@ program main
   use ModFileList, only: getFileList, dynamicString, int2str
   use converter_AZ, only: main_work
   use basic_libs, only: BASENAME
+  use global_constants_mod, only: dblp=>dp
   implicit none
 
 !~   call main_work('test-data/temsg2.dat',"temsg2.nc","temsg",.true.)
@@ -85,7 +86,7 @@ program main
          outputfile=trim(basename(FileList(i)%record, ".dat"))//extension
          write(*,*) "Converting: -> ", FileList(i)%record, " " , trim(outputfile)
          ! call main_work(FileList(i)%record,trim(outputfile),"prc",.true.)
-         call main_work(FileList(i)%record,trim(outputfile),"pr",.true.,stdnm="precipitation_flux")
+         call main_work(FileList(i)%record,trim(outputfile),"pr",.true.,stdnm="precipitation_flux",multiple=1._dblp/86400._dblp)
        end do
 !~        call main_work("temsg230.dat","temsg230.nc","temsg",.true.)
    end if
